@@ -346,10 +346,15 @@ export type LabelCount = Record<string, number>;
 interface NodeType extends Partial<Node> {
   labels?: string[];
 }
+
+interface RelationshipType extends Partial<Relationship> {
+  labels?: string[];
+}
 export interface LegendChipProps {
   scheme: Scheme;
   title: string;
-  nodes: NodeType[];
+  nodes?: NodeType[];
+  relationships?: RelationshipType[];
 }
 export interface FileContextProviderProps {
   children: ReactNode;
