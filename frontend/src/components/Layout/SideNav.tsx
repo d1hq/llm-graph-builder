@@ -6,7 +6,7 @@ import {
   TrashIconOutline,
   ArrowsPointingOutIconOutline,
   ChatBubbleOvalLeftEllipsisIconOutline,
-  CloudArrowUpIconSolid,
+//  CloudArrowUpIconSolid,
 } from '@neo4j-ndl/react/icons';
 import { SideNavProps } from '../../types';
 import Chatbot from '../ChatBot/Chatbot';
@@ -21,7 +21,7 @@ import IconButtonWithToolTip from '../UI/IconButtonToolTip';
 import GCSButton from '../DataSources/GCS/GCSButton';
 import S3Component from '../DataSources/AWS/S3Bucket';
 import WebButton from '../DataSources/Web/WebButton';
-import DropZoneForSmallLayouts from '../DataSources/Local/DropZoneForSmallLayouts';
+//import DropZoneForSmallLayouts from '../DataSources/Local/DropZoneForSmallLayouts';
 import { useCredentials } from '../../context/UserCredentials';
 
 const SideNav: React.FC<SideNavProps> = ({
@@ -54,7 +54,7 @@ const SideNav: React.FC<SideNavProps> = ({
           datetime: `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
           id: 2,
           message:
-            ' Welcome to the Neo4j Knowledge Graph Chat. You can ask questions related to documents which have been completely processed.',
+            ' Welcome to the Investment.One Chat. You can ask questions related to documents which have been completely processed.',
           user: 'chatbot',
         },
       ]);
@@ -97,8 +97,8 @@ const SideNav: React.FC<SideNavProps> = ({
               icon={position === 'left' ? <ArrowLeftIconOutline /> : <ArrowRightIconOutline />}
             />
           )}
-          {!isExpanded && position === 'left' && largedesktops && (
-            <SideNavigation.Item
+	  {/** {!isExpanded && position === 'left' && largedesktops && (
+          <SideNavigation.Item
               onClick={handleClick}
               icon={
                 <Tip allowedPlacements={['right']}>
@@ -109,7 +109,7 @@ const SideNav: React.FC<SideNavProps> = ({
                 </Tip>
               }
             />
-          )}
+          )} */}
 
           {position === 'right' && !isExpanded && (
             <SideNavigation.Item
@@ -125,7 +125,7 @@ const SideNav: React.FC<SideNavProps> = ({
             />
           )}
 
-          {!largedesktops && position === 'left' && (
+	  {/**         {!largedesktops && position === 'left' && (
             <SideNavigation.Item
               icon={
                 <Tip allowedPlacements={['right']}>
@@ -136,7 +136,7 @@ const SideNav: React.FC<SideNavProps> = ({
                 </Tip>
               }
             />
-          )}
+          )} */}
           {!largedesktops && APP_SOURCES.includes('gcs') && position === 'left' && (
             <SideNavigation.Item
               icon={

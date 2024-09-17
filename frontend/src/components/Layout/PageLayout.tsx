@@ -22,7 +22,7 @@ export default function PageLayoutNew({
   openSettingsDialog: () => void;
 }) {
   const largedesktops = useMediaQuery(`(min-width:1440px )`);
-  const [isLeftExpanded, setIsLeftExpanded] = useState<boolean>(Boolean(largedesktops));
+  const [isLeftExpanded, setIsLeftExpanded] = useState<boolean>(false);
   const [isRightExpanded, setIsRightExpanded] = useState<boolean>(Boolean(largedesktops));
   const [showChatBot, setShowChatBot] = useState<boolean>(false);
   const [showDrawerChatbot, setShowDrawerChatbot] = useState<boolean>(true);

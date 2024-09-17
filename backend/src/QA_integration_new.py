@@ -32,6 +32,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_fireworks import ChatFireworks
 from langchain_aws import ChatBedrock
 from langchain_community.chat_models import ChatOllama
+from langchain_experimental.llms.ollama_functions import OllamaFunctions
 
 load_dotenv() 
 
@@ -183,6 +184,63 @@ def get_rag_chain(llm,system_template=CHAT_SYSTEM_TEMPLATE):
 
     return question_answering_chain
 
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
+class Subsidiary(BaseModel):
+    """Information about a Subsidiary."""
+
+    # ^ Doc-string for the entity Subsidiary.
+    # This doc-string is sent to the LLM as the description of the schema Subsidiary,
+    # and it can help to improve extraction results.
+
+    # Note that:
+    # 1. Each field is an `optional` -- this allows the model to decline to extract it!
+    # 2. Each field has a `description` -- this description is used by the LLM.
+    # Having a good description can help improve extraction results.
+    name: Optional[str] = Field(default=None, description="The name of the subsidiary")
+    location: Optional[str] = Field(
+        default=None, description="The location of the subsidiary (address, city, country) if known"
+    )
+
+class Organization(BaseModel):
+    """Information about a Organization."""
+
+    # ^ Doc-string for the entity Organization.
+    # This doc-string is sent to the LLM as the description of the schema Organization,
+    # and it can help to improve extraction results.
+
+    # Note that:
+    # 1. Each field is an `optional` -- this allows the model to decline to extract it!
+    # 2. Each field has a `description` -- this description is used by the LLM.
+    # Having a good description can help improve extraction results.
+    name: Optional[str] = Field(default=None, description="The name of the organization")
+    location: Optional[str] = Field(
+        default=None, description="The location of the organization (address, city, country) if known"
+    )
+    subsidiaries: List[Subsidiary]
+
+def get_extractor_chain(llm):
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are an expert extraction algorithm. "
+                "Only extract relevant information from the text. "
+                "If you do not know the value of an attribute asked to extract, "
+                "return null for the attribute's value.",
+            ),
+            # Please see the how-to about improving performance with
+            # reference examples.
+            # MessagesPlaceholder('examples'),
+            ("human", "{context}"),
+        ]
+    )
+    extractor_chain = prompt | llm.with_structured_output(schema=Organization) 
+
+    return extractor_chain
+
 def get_sources_and_chunks(sources_used, docs):
     chunkdetails_list = []
     sources_used_set = set(sources_used)
@@ -267,6 +325,24 @@ def setup_chat(model, graph, document_names,retrieval_query,mode):
     
     return llm, doc_retriever, model_name
 
+def setup_extract(model, graph, document_names,retrieval_query,mode):
+    start_time = time.time()
+
+    env_key = "LLM_MODEL_CONFIG_" + model
+    env_value = os.environ.get(env_key)
+    logging.info("Model: {}".format(env_key))
+
+    model_name, base_url = env_value.split(",")
+    llm = OllamaFunctions(base_url=base_url, model=model_name)
+    logging.info(f"Model called in extract {model} and model version is {model_name}")
+
+    retriever = get_neo4j_retriever(graph=graph,retrieval_query=retrieval_query,document_names=document_names,mode=mode)
+    doc_retriever = create_document_retriever_chain(llm, retriever)
+    extract_setup_time = time.time() - start_time
+    logging.info(f"Extract setup completed in {extract_setup_time:.2f} seconds")
+    
+    return llm, doc_retriever, model_name
+
 def retrieve_documents(doc_retriever, messages):
     start_time = time.time()
     docs = doc_retriever.invoke({"messages": messages})
@@ -292,6 +368,21 @@ def process_documents(docs, question, messages, llm,model):
     logging.info(f"Final Response predicted in {predict_time:.2f} seconds")
     
     return content, result, total_tokens
+
+def extract_from_documents(docs, llm, model):
+    start_time = time.time()
+    formatted_docs = format_documents(docs,model)
+    logging.info(formatted_docs)
+    extractor_chain = get_extractor_chain(llm=llm)
+    ai_response = extractor_chain.invoke({
+        "context": formatted_docs
+    })
+    logging.info(ai_response)
+    
+    predict_time = time.time() - start_time
+    logging.info(f"Final Response predicted in {predict_time:.2f} seconds")
+    
+    return ai_response
 
 def summarize_and_log(history, messages, llm):
     start_time = time.time()
@@ -359,7 +450,7 @@ def QA_RAG(graph, model, question, document_names,session_id, mode):
             graph_response = get_graph_response(graph_chain,question)
             ai_response = AIMessage(content=graph_response["response"]) if graph_response["response"] else AIMessage(content="Something went wrong")
             messages.append(ai_response)
-            summarize_and_log(history, messages, qa_llm)
+            #summarize_and_log(history, messages, qa_llm)
 
             result = {
                 "session_id": session_id, 
@@ -392,7 +483,7 @@ def QA_RAG(graph, model, question, document_names,session_id, mode):
         
         ai_response = AIMessage(content=content)
         messages.append(ai_response)
-        summarize_and_log(history, messages, llm)
+        #summarize_and_log(history, messages, llm)
         
         return {
             "session_id": session_id, 
@@ -419,6 +510,46 @@ def QA_RAG(graph, model, question, document_names,session_id, mode):
                 "chunkids": [],
                 "error": f"{error_name} :- {str(e)}",
                 "mode": mode
+            },
+            "user": "chatbot"
+        }
+
+
+def EXTRACT_DATA(graph, model):
+    try:
+        messages = list()
+        user_question = HumanMessage(content="where is Test Inc. located at and what are it's subsidiaries?")
+        messages.append(user_question)
+        
+        retrieval_query = VECTOR_GRAPH_SEARCH_QUERY.format(no_of_entites=VECTOR_GRAPH_SEARCH_ENTITY_LIMIT)
+
+        llm, doc_retriever, model_version = setup_extract(model, graph, "[]", retrieval_query, "graph + vector + fulltext")
+        
+        docs = retrieve_documents(doc_retriever, messages)
+                
+        if docs:
+            content = extract_from_documents(docs, llm, model)
+        else:
+            content = "I couldn't find any relevant documents to answer your question."
+        
+        return {
+            "message": content, 
+            "info": {
+                "model": model_version,
+                "response_time": 0
+            },
+            "user": "chatbot"
+        }
+
+    except Exception as e:
+        logging.exception(f"Exception in QA component at {datetime.now()}: {str(e)}")
+        error_name = type(e).__name__
+        return { 
+            "message": "Something went wrong",
+            "info": {
+                "sources": [],
+                "chunkids": [],
+                "error": f"{error_name} :- {str(e)}"
             },
             "user": "chatbot"
         }

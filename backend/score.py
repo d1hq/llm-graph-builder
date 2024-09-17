@@ -80,7 +80,7 @@ async def create_source_knowledge_graph_url(
     aws_access_key_id=Form(None),
     aws_secret_access_key=Form(None),
     wiki_query=Form(None),
-    model=Form(),
+    model=Form("ollama_llama3"),
     gcs_bucket_name=Form(None),
     gcs_bucket_folder=Form(None),
     source_type=Form(None),
@@ -130,7 +130,7 @@ async def extract_knowledge_graph_from_file(
     uri=Form(),
     userName=Form(),
     password=Form(),
-    model=Form(),
+    model=Form("ollama_llama3"),
     database=Form(),
     source_url=Form(None),
     aws_access_key_id=Form(None),
@@ -283,7 +283,7 @@ async def post_processing(uri=Form(), userName=Form(), password=Form(), database
         gc.collect()
                 
 @app.post("/chat_bot")
-async def chat_bot(uri=Form(),model=Form(None),userName=Form(), password=Form(), database=Form(),question=Form(None), document_names=Form(None),session_id=Form(None),mode=Form(None)):
+async def chat_bot(uri=Form(),model=Form("ollama_llama3"),userName=Form(), password=Form(), database=Form(),question=Form(None), document_names=Form(None),session_id=Form(None),mode=Form(None)):
     logging.info(f"QA_RAG called at {datetime.now()}")
     qa_rag_start_time = time.time()
     try:
@@ -306,6 +306,31 @@ async def chat_bot(uri=Form(),model=Form(None),userName=Form(), password=Form(),
         message="Unable to get chat response"
         error_message = str(e)
         logging.exception(f'Exception in chat bot:{error_message}')
+        return create_api_response(job_status, message=message, error=error_message)
+    finally:
+        gc.collect()
+
+@app.post("/extract_data")
+async def extract_data(uri=Form(),model=Form(None),userName=Form(), password=Form(), database=Form()):
+    logging.info(f"Extract Data called at {datetime.now()}")
+    ed_rag_start_time = time.time()
+    try:
+        graph = create_graph_database_connection(uri, userName, password, database)
+        result = await asyncio.to_thread(EXTRACT_DATA,graph=graph,model=model)
+
+        total_call_time = time.time() - ed_rag_start_time
+        logging.info(f"Total Response time is  {total_call_time:.2f} seconds")
+        result["info"]["response_time"] = round(total_call_time, 2)
+        
+        json_obj = {'api_name':'extract_data','db_url':uri, 'logging_time': formatted_time(datetime.now(timezone.utc))}
+        logger.log_struct({"severity":"INFO","jsonPayload":json_obj})
+        
+        return create_api_response('Success',data=result)
+    except Exception as e:
+        job_status = "Failed"
+        message="Unable to extract data"
+        error_message = str(e)
+        logging.exception(f'Exception in extract data:{error_message}')
         return create_api_response(job_status, message=message, error=error_message)
     finally:
         gc.collect()
@@ -388,7 +413,7 @@ async def connect(uri=Form(), userName=Form(), password=Form(), database=Form())
 
 @app.post("/upload")
 async def upload_large_file_into_chunks(file:UploadFile = File(...), chunkNumber=Form(None), totalChunks=Form(None), 
-                                        originalname=Form(None), model=Form(None), uri=Form(), userName=Form(), 
+                                        originalname=Form(None), model=Form("ollama_llama3"), uri=Form(), userName=Form(), 
                                         password=Form(), database=Form()):
     try:
         graph = create_graph_database_connection(uri, userName, password, database)
@@ -547,7 +572,7 @@ async def cancelled_job(uri=Form(), userName=Form(), password=Form(), database=F
         gc.collect()
 
 @app.post("/populate_graph_schema")
-async def populate_graph_schema(input_text=Form(None), model=Form(None), is_schema_description_checked=Form(None)):
+async def populate_graph_schema(input_text=Form(None), model=Form("ollama_llama3"), is_schema_description_checked=Form(None)):
     try:
         result = populate_graph_schema_from_text(input_text, model, is_schema_description_checked)
         return create_api_response('Success',data=result)

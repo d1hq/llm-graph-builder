@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useRef, Suspense, useReducer, useCallback } from 'react';
 import FileTable from './FileTable';
-import { Button, Typography, Flex, StatusIndicator, useMediaQuery } from '@neo4j-ndl/react';
+import { Button, Flex, useMediaQuery } from '@neo4j-ndl/react';
 import { useCredentials } from '../context/UserCredentials';
 import { useFileContext } from '../context/UsersFiles';
 import { extractAPI } from '../utils/FileAPI';
@@ -9,7 +9,7 @@ import {
   ChildRef,
   ContentProps,
   CustomFile,
-  OptionType,
+  //OptionType,
   UserCredentials,
   connectionState,
 } from '../types';
@@ -18,10 +18,10 @@ import { postProcessing } from '../services/PostProcessing';
 import { triggerStatusUpdateAPI } from '../services/ServerSideStatusUpdateAPI';
 import useServerSideEvent from '../hooks/useSse';
 import { useSearchParams } from 'react-router-dom';
-import { batchSize, buttonCaptions, defaultLLM, largeFileSize, llms, RETRY_OPIONS, tooltips } from '../utils/Constants';
+import { batchSize, buttonCaptions, largeFileSize, RETRY_OPIONS, tooltips } from '../utils/Constants';
 import ButtonWithToolTip from './UI/ButtonWithToolTip';
 import connectAPI from '../services/ConnectAPI';
-import DropdownComponent from './Dropdown';
+//import DropdownComponent from './Dropdown';
 import GraphViewModal from './Graph/GraphViewModal';
 import { lazy } from 'react';
 import FallBackDialog from './UI/FallBackDialog';
@@ -73,7 +73,7 @@ const Content: React.FC<ContentProps> = ({
   const {
     filesData,
     setFilesData,
-    setModel,
+  //  setModel,
     model,
     selectedNodes,
     selectedRels,
@@ -200,11 +200,10 @@ const Content: React.FC<ContentProps> = ({
     }
   }, []);
 
-  const handleDropdownChange = (selectedOption: OptionType | null | void) => {
     if (selectedOption?.value) {
       setModel(selectedOption?.value);
     }
-  };
+  };*/
 
   const extractData = async (uid: string, isselectedRows = false, filesTobeProcess: CustomFile[]) => {
     if (!isselectedRows) {
@@ -546,27 +545,27 @@ const Content: React.FC<ContentProps> = ({
     [childRef.current?.getSelectedRows()]
   );
 
-  const newFilecheck = useMemo(
+  /** const newFilecheck = useMemo(
     () => childRef.current?.getSelectedRows().filter((f) => f.status === 'New' || f.status == 'Reprocess').length,
     [childRef.current?.getSelectedRows()]
-  );
+  );*/
 
   const completedfileNo = useMemo(
     () => childRef.current?.getSelectedRows().filter((f) => f.status === 'Completed').length,
     [childRef.current?.getSelectedRows()]
   );
 
-  const dropdowncheck = useMemo(
+  /**const dropdowncheck = useMemo(
     () => !filesData.some((f) => f.status === 'New' || f.status === 'Waiting' || f.status === 'Reprocess'),
     [filesData]
-  );
+  );*/
 
-  const disableCheck = useMemo(
+  /**const disableCheck = useMemo(
     () => (!selectedfileslength ? dropdowncheck : !newFilecheck),
     [selectedfileslength, filesData, newFilecheck]
-  );
+  );*/
 
-  const showGraphCheck = useMemo(
+   const showGraphCheck = useMemo(
     () => (selectedfileslength ? completedfileNo === 0 : true),
     [selectedfileslength, completedfileNo]
   );
@@ -625,7 +624,7 @@ const Content: React.FC<ContentProps> = ({
     setshowDeletePopUp(false);
   };
 
-  const onClickHandler = () => {
+  /** const onClickHandler = () => {
     const selectedRows = childRef.current?.getSelectedRows();
     if (selectedRows?.length) {
       let selectedLargeFiles: CustomFile[] = [];
@@ -666,7 +665,7 @@ const Content: React.FC<ContentProps> = ({
         handleGenerateGraph(filesData.filter((f) => f.status === 'New' || f.status === 'Reprocess'));
       }
     }
-  };
+  }; */
 
   const retryOnclose = useCallback(() => {
     setRetryFile('');
@@ -740,9 +739,9 @@ const Content: React.FC<ContentProps> = ({
             />
           </Suspense>
 
-          <div className='connectionstatus__container'>
-            <span className='h6 px-1'>Neo4j connection</span>
-            <Typography variant='body-medium'>
+	  <div className='connectionstatus__container'>
+            <span className='h6 px-1'>Documents</span>
+	    {/** <Typography variant='body-medium'>
               {!connectionStatus ? <StatusIndicator type='danger' /> : <StatusIndicator type='success' />}
               {connectionStatus ? (
                 <span className='n-body-small'>{userCredentials?.uri}</span>
@@ -768,7 +767,7 @@ const Content: React.FC<ContentProps> = ({
                   <span className='n-body-small'>No Graph Schema configured</span>
                 )}
               </div>
-            </Typography>
+            </Typography> */}
           </div>
           <div>
             <ButtonWithToolTip
@@ -817,19 +816,19 @@ const Content: React.FC<ContentProps> = ({
           className={`${
             !isLeftExpanded && !isRightExpanded ? 'w-[calc(100%-128px)]' : 'w-full'
           } p-2.5 absolute bottom-4 mt-1.5 self-start`}
-          justifyContent='space-between'
+          justifyContent='flex-end'
           flexDirection={isTablet ? 'column' : 'row'}
         >
-          <DropdownComponent
+	{/** <DropdownComponent
             onSelect={handleDropdownChange}
             options={llms ?? ['']}
             placeholder='Select LLM Model'
             defaultValue={defaultLLM}
             view='ContentView'
-            isDisabled={false}
-          />
+            isDisabled={true}
+          />  */}
           <Flex flexDirection='row' gap='4' className='self-end' flexWrap='wrap'>
-            <ButtonWithToolTip
+	  {/** <ButtonWithToolTip
               text={tooltips.generateGraph}
               placement='top'
               label='generate graph'
@@ -840,7 +839,7 @@ const Content: React.FC<ContentProps> = ({
             >
               {buttonCaptions.generateGraph}{' '}
               {selectedfileslength && !disableCheck && newFilecheck ? `(${newFilecheck})` : ''}
-            </ButtonWithToolTip>
+            </ButtonWithToolTip>*/}
             <ButtonWithToolTip
               text={tooltips.showGraph}
               placement='top'

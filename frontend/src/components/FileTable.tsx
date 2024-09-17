@@ -2,12 +2,9 @@ import {
   Checkbox,
   DataGrid,
   DataGridComponents,
-  Flex,
   IconButton,
   ProgressBar,
   StatusIndicator,
-  TextLink,
-  Typography,
 } from '@neo4j-ndl/react';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import {
@@ -25,6 +22,7 @@ import {
 import { useFileContext } from '../context/UsersFiles';
 import { getSourceNodes } from '../services/GetFiles';
 import { v4 as uuidv4 } from 'uuid';
+import { statusCheck } from '../utils/Utils';
 import {
   statusCheck,
   capitalize,
@@ -36,7 +34,6 @@ import {
 import { SourceNode, CustomFile, FileTableProps, UserCredentials, statusupdate, ChildRef } from '../types';
 import { useCredentials } from '../context/UserCredentials';
 import { ArrowPathIconSolid, MagnifyingGlassCircleIconSolid } from '@neo4j-ndl/react/icons';
-import CustomProgressBar from './UI/CustomProgressBar';
 import subscribe from '../services/PollingAPI';
 import { triggerStatusUpdateAPI } from '../services/ServerSideStatusUpdateAPI';
 import useServerSideEvent from '../hooks/useSse';
@@ -44,7 +41,7 @@ import { AxiosError } from 'axios';
 import { XMarkIconOutline } from '@neo4j-ndl/react/icons';
 import cancelAPI from '../services/CancelAPI';
 import IconButtonWithToolTip from './UI/IconButtonToolTip';
-import { batchSize, largeFileSize, llms } from '../utils/Constants';
+import { batchSize, largeFileSize } from '../utils/Constants';
 import IndeterminateCheckbox from './UI/CustomCheckBox';
 import { showErrorToast, showNormalToast } from '../utils/toasts';
 let onlyfortheFirstRender = true;
@@ -58,8 +55,8 @@ const FileTable = forwardRef<ChildRef, FileTableProps>((props, ref) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [statusFilter, setstatusFilter] = useState<string>('');
   const [filetypeFilter, setFiletypeFilter] = useState<string>('');
-  const [fileSourceFilter, setFileSourceFilter] = useState<string>('');
-  const [llmtypeFilter, setLLmtypeFilter] = useState<string>('');
+  const [fileSourceFilter] = useState<string>('');
+  const [llmtypeFilter] = useState<string>('');
   const skipPageResetRef = useRef<boolean>(false);
 
   const tableRef = useRef(null);
@@ -289,101 +286,11 @@ const FileTable = forwardRef<ChildRef, FileTableProps>((props, ref) => {
           },
         },
       }),
-      columnHelper.accessor((row) => row.uploadprogess, {
-        id: 'uploadprogess',
-        cell: (info: CellContext<CustomFile, string>) => {
-          if (parseInt(info.getValue()) === 100 || info.row.original?.status === 'New') {
-            return (
-              <Typography variant='body-medium'>
-                <StatusIndicator type='success' />
-                Uploaded
-              </Typography>
-            );
-          } else if (info.row.original?.status === 'Uploading') {
-            return <CustomProgressBar value={parseInt(info?.getValue())}></CustomProgressBar>;
-          } else if (info.row.original?.status === 'Failed') {
-            return (
-              <Typography variant='body-medium'>
-                <StatusIndicator type='danger' />
-                NA
-              </Typography>
-            );
-          }
-          return (
-            <Typography variant='body-medium'>
-              <StatusIndicator type='success' />
-              Uploaded
-            </Typography>
-          );
-        },
-        header: () => <span>Upload Status</span>,
-        footer: (info) => info.column.id,
-      }),
       columnHelper.accessor((row) => row.size, {
         id: 'fileSize',
         cell: (info: CellContext<CustomFile, string>) => <i>{(parseInt(info?.getValue()) / 1000)?.toFixed(2)}</i>,
         header: () => <span>Size (KB)</span>,
         footer: (info) => info.column.id,
-      }),
-      columnHelper.accessor((row) => row, {
-        id: 'source',
-        cell: (info) => {
-          if (
-            info.row.original.fileSource === 'youtube' ||
-            info.row.original.fileSource === 'Wikipedia' ||
-            info.row.original.fileSource === 'web-url'
-          ) {
-            return (
-              <Flex>
-                <span>
-                  <TextLink externalLink href={info.row.original.source_url}>
-                    {info.row.original.fileSource}
-                  </TextLink>
-                </span>
-              </Flex>
-            );
-          }
-          return (
-            <div>
-              <span>{info.row.original.fileSource}</span>
-            </div>
-          );
-        },
-        header: () => <span>Source</span>,
-        footer: (info) => info.column.id,
-        filterFn: 'fileSourceFilter' as any,
-        meta: {
-          columnActions: {
-            actions: [
-              {
-                title: (
-                  <span className={`${fileSourceFilter === 'All' ? 'n-bg-palette-primary-bg-selected' : ''} p-2`}>
-                    All Sources
-                  </span>
-                ),
-                onClick: () => {
-                  setFileSourceFilter('All');
-                  table.getColumn('source')?.setFilterValue(true);
-                },
-              },
-              ...Array.from(new Set(filesData.map((f) => f.fileSource))).map((t) => {
-                return {
-                  title: (
-                    <span className={`${t === fileSourceFilter ? 'n-bg-palette-primary-bg-selected' : ''} p-2`}>
-                      {t}
-                    </span>
-                  ),
-                  onClick: () => {
-                    setFileSourceFilter(t as string);
-                    table.getColumn('source')?.setFilterValue(true);
-                    skipPageResetRef.current = true;
-                  },
-                };
-              }),
-            ],
-            defaultSortingActions: false,
-          },
-        },
       }),
       columnHelper.accessor((row) => row, {
         id: 'type',
@@ -427,68 +334,6 @@ const FileTable = forwardRef<ChildRef, FileTableProps>((props, ref) => {
             defaultSortingActions: false,
           },
         },
-      }),
-      columnHelper.accessor((row) => row.model, {
-        id: 'model',
-        cell: (info) => {
-          const model = info.getValue();
-          return (
-            <i>
-              {(model.includes('LLM_MODEL_CONFIG_')
-                ? capitalize(model.split('LLM_MODEL_CONFIG_').at(-1) as string)
-                : capitalize(model)
-              )
-                .split('_')
-                .join(' ')}
-            </i>
-          );
-        },
-        header: () => <span>Model</span>,
-        footer: (info) => info.column.id,
-        filterFn: 'llmTypeFilter' as any,
-        meta: {
-          columnActions: {
-            actions: [
-              {
-                title: (
-                  <span className={`${llmtypeFilter === 'All' ? 'n-bg-palette-primary-bg-selected' : ''} p-2`}>
-                    All
-                  </span>
-                ),
-                onClick: () => {
-                  setLLmtypeFilter('All');
-                  table.getColumn('model')?.setFilterValue(true);
-                  skipPageResetRef.current = true;
-                },
-              },
-              ...llms.map((m) => {
-                return {
-                  title: (
-                    <span className={`${m === llmtypeFilter ? 'n-bg-palette-primary-bg-selected' : ''} p-2`}>{m}</span>
-                  ),
-                  onClick: () => {
-                    setLLmtypeFilter(m);
-                    table.getColumn('model')?.setFilterValue(true);
-                    skipPageResetRef.current = true;
-                  },
-                };
-              }),
-            ],
-            defaultSortingActions: false,
-          },
-        },
-      }),
-      columnHelper.accessor((row) => row.NodesCount, {
-        id: 'NodesCount',
-        cell: (info) => <i>{info.getValue()}</i>,
-        header: () => <span>Nodes</span>,
-        footer: (info) => info.column.id,
-      }),
-      columnHelper.accessor((row) => row.relationshipCount, {
-        id: 'relationshipCount',
-        cell: (info) => <i>{info.getValue()}</i>,
-        header: () => <span>Relations</span>,
-        footer: (info) => info.column.id,
       }),
       columnHelper.accessor((row) => row.status, {
         id: 'inspect',

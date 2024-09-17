@@ -1,4 +1,4 @@
-version: "3"
+version: '3.8'
 
 services:
   backend:
@@ -8,34 +8,16 @@ services:
     volumes:
       - ./backend:/code
     environment:
-      - NEO4J_URI=${NEO4J_URI-neo4j://database:7687}
-      - NEO4J_PASSWORD=${NEO4J_PASSWORD-password}
-      - NEO4J_USERNAME=${NEO4J_USERNAME-neo4j}
-      - OPENAI_API_KEY=${OPENAI_API_KEY-}
-      - DIFFBOT_API_KEY=${DIFFBOT_API_KEY-}
-      - EMBEDDING_MODEL=${EMBEDDING_MODEL-all-MiniLM-L6-v2}
-      - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT-}
-      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2-}
-      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT-}
-      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY-}
-      - KNN_MIN_SCORE=${KNN_MIN_SCORE-0.94}
-      - IS_EMBEDDING=${IS_EMBEDDING-true}
-      - GEMINI_ENABLED=${GEMINI_ENABLED-False}
-      - GCP_LOG_METRICS_ENABLED=${GCP_LOG_METRICS_ENABLED-False}
-      - UPDATE_GRAPH_CHUNKS_PROCESSED=${UPDATE_GRAPH_CHUNKS_PROCESSED-20}
-      - NUMBER_OF_CHUNKS_TO_COMBINE=${NUMBER_OF_CHUNKS_TO_COMBINE-6}
-      - ENTITY_EMBEDDING=${ENTITY_EMBEDDING-False}
-      - GCS_FILE_CACHE=${GCS_FILE_CACHE-False}
-#      - LLM_MODEL_CONFIG_anthropic_claude_35_sonnet=${LLM_MODEL_CONFIG_anthropic_claude_35_sonnet-}
-#      - LLM_MODEL_CONFIG_fireworks_llama_v3_70b=${LLM_MODEL_CONFIG_fireworks_llama_v3_70b-}
-#      - LLM_MODEL_CONFIG_azure_ai_gpt_4o=${LLM_MODEL_CONFIG_azure_ai_gpt_4o-}
-#      - LLM_MODEL_CONFIG_azure_ai_gpt_35=${LLM_MODEL_CONFIG_azure_ai_gpt_35-}
-#      - LLM_MODEL_CONFIG_groq_llama3_70b=${LLM_MODEL_CONFIG_groq_llama3_70b-}
-#      - LLM_MODEL_CONFIG_bedrock_claude_3_5_sonnet=${LLM_MODEL_CONFIG_bedrock_claude_3_5_sonnet-}
-#     - LLM_MODEL_CONFIG_fireworks_qwen_72b=${LLM_MODEL_CONFIG_fireworks_qwen_72b-}
-      - LLM_MODEL_CONFIG_ollama_llama3=${LLM_MODEL_CONFIG_ollama_llama3-}
-    # env_file:
-    #   - ./backend/.env
+      - NEO4J_URI=neo4j://host.docker.internal:7687
+      - NEO4J_PASSWORD=neo4j
+      - NEO4J_USERNAME=12345678
+      - EMBEDDING_MODEL=all-MiniLM-L6-v2
+      - KNN_MIN_SCORE=0.94
+      - IS_EMBEDDING=true
+      - UPDATE_GRAPH_CHUNKS_PROCESSED=20
+      - NUMBER_OF_CHUNKS_TO_COMBINE=6
+      - ENTITY_EMBEDDING=True
+      - LLM_MODEL_CONFIG_ollama_llama3=llama3.1,http://host.docker.internal:11434
     container_name: backend
     extra_hosts:
       - host.docker.internal:host-gateway
@@ -51,25 +33,24 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - VITE_BACKEND_API_URL=${VITE_BACKEND_API_URL-http://localhost:8000}
-        - VITE_REACT_APP_SOURCES=${VITE_REACT_APP_SOURCES-local,youtube,wiki,s3}
-        - VITE_LLM_MODELS=${VITE_LLM_MODELS-diffbot,openai-gpt-3.5,openai-gpt-4o}
-        - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID-""}
-        - VITE_BLOOM_URL=${VITE_BLOOM_URL-https://workspace-preview.neo4j.io/workspace/explore?connectURL={CONNECT_URL}&search=Show+me+a+graph&featureGenAISuggestions=true&featureGenAISuggestionsInternal=true}
-        - VITE_TIME_PER_PAGE=${VITE_TIME_PER_PAGE-50}
-        - VITE_CHUNK_SIZE=${VITE_CHUNK_SIZE-5242880}
-        - VITE_LARGE_FILE_SIZE=${VITE_LARGE_FILE_SIZE-5242880}
-        - VITE_ENV=${VITE_ENV-DEV}
-        - VITE_CHAT_MODES=${VITE_CHAT_MODES-""}
-        - VITE_BATCH_SIZE=${VITE_BATCH_SIZE-2}
+        - VITE_BACKEND_API_URL=https://io-dev.document.one/api
+        - VITE_REACT_APP_SOURCES=local
+        - VITE_LLM_MODELS=ollama_llama3
+        - VITE_BLOOM_URL=${BLOOM_URL-https://workspace-preview.neo4j.io/workspace/explore?connectURL={CONNECT_URL}&search=Show+me+a+graph&featureGenAISuggestions=true&featureGenAISuggestionsInternal=true}
+        - VITE_TIME_PER_CHUNK=4
+        - VITE_TIME_PER_PAGE=50
+        - VITE_CHUNK_SIZE=5242880
+        - VITE_ENV=DEV
+        - VITE_CHAT_MODES=vector,graph,graph+vector
+        - VITE_BATCH_SIZE=2
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    # env_file:
-    #   - ./frontend/.env
+      - /etc/letsencrypt:/etc/letsencrypt  
     container_name: frontend
     ports:
-      - "8080:8080"
+      - "80:80"
+      - "443:443"  
     networks:
       - net
 

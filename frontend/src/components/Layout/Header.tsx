@@ -1,21 +1,21 @@
-import Neo4jLogoBW from '../../logo.svg';
-import Neo4jLogoColor from '../../logo-color.svg';
+import Neo4jLogoBW from '../../logo.png';
+import Neo4jLogoColor from '../../logo.png';
 import {
   MoonIconOutline,
   SunIconOutline,
-  CodeBracketSquareIconOutline,
-  InformationCircleIconOutline,
+  //CodeBracketSquareIconOutline,
+	  // InformationCircleIconOutline,
 } from '@neo4j-ndl/react/icons';
 import { Typography } from '@neo4j-ndl/react';
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import IconButtonWithToolTip from '../UI/IconButtonToolTip';
 import { tooltips } from '../../utils/Constants';
 import { useFileContext } from '../../context/UsersFiles';
 
 export default function Header({ themeMode, toggleTheme }: { themeMode: string; toggleTheme: () => void }) {
-  const handleURLClick = useCallback((url: string) => {
+	{/* const handleURLClick = useCallback((url: string) => {
     window.open(url, '_blank');
-  }, []);
+  }, []);*/}
 
   const { isSchema, setIsSchema } = useFileContext();
 
@@ -50,7 +50,7 @@ export default function Header({ themeMode, toggleTheme }: { themeMode: string; 
               className='inline-flex gap-x-1'
               style={{ display: 'flex', flexGrow: 0, alignItems: 'center', gap: '4px' }}
             >
-              <IconButtonWithToolTip
+	    {/*              <IconButtonWithToolTip
                 text={tooltips.documentation}
                 onClick={() => handleURLClick('https://neo4j.com/labs/genai-ecosystem/llm-graph-builder')}
                 size='large'
@@ -69,7 +69,7 @@ export default function Header({ themeMode, toggleTheme }: { themeMode: string; 
                 clean
               >
                 <CodeBracketSquareIconOutline />
-              </IconButtonWithToolTip>
+              </IconButtonWithToolTip> */}
               <IconButtonWithToolTip
                 label={tooltips.theme}
                 text={tooltips.theme}

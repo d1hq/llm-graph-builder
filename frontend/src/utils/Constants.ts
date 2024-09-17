@@ -55,7 +55,9 @@ export const defaultLLM = llms?.includes('openai-gpt-4o')
   ? 'openai-gpt-4o'
   : llms?.includes('gemini-1.0-pro')
   ? 'gemini-1.0-pro'
-  : 'diffbot';
+  : llms?.includes('diffbot')
+  ? 'diffbot'
+  : 'ollama_llama3';
 export const chatModes =
   process.env?.VITE_CHAT_MODES?.trim() != ''
     ? process.env.VITE_CHAT_MODES?.split(',')
