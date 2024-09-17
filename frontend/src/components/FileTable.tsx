@@ -22,10 +22,8 @@ import {
 import { useFileContext } from '../context/UsersFiles';
 import { getSourceNodes } from '../services/GetFiles';
 import { v4 as uuidv4 } from 'uuid';
-import { statusCheck } from '../utils/Utils';
 import {
   statusCheck,
-  capitalize,
   isFileCompleted,
   calculateProcessedCount,
   getFileSourceStatus,

@@ -369,13 +369,20 @@ def process_documents(docs, question, messages, llm,model):
     
     return content, result, total_tokens
 
-def extract_from_documents(docs, llm, model):
+def extract_from_documents(docs, question, messages, llm, model):
     start_time = time.time()
     formatted_docs = format_documents(docs,model)
     logging.info(formatted_docs)
+    rag_chain = get_rag_chain(llm=llm)
+    ai_response = rag_chain.invoke({
+        "messages": messages[:-1],
+        "context": formatted_docs,
+        "input": question 
+    })
+
     extractor_chain = get_extractor_chain(llm=llm)
     ai_response = extractor_chain.invoke({
-        "context": formatted_docs
+        "context": ai_response.content
     })
     logging.info(ai_response)
     
@@ -518,7 +525,7 @@ def QA_RAG(graph, model, question, document_names,session_id, mode):
 def EXTRACT_DATA(graph, model):
     try:
         messages = list()
-        user_question = HumanMessage(content="where is Test Inc. located at and what are it's subsidiaries?")
+        user_question = HumanMessage(content="Where is Test Inc. located at and what are it's subsidiaries?")
         messages.append(user_question)
         
         retrieval_query = VECTOR_GRAPH_SEARCH_QUERY.format(no_of_entites=VECTOR_GRAPH_SEARCH_ENTITY_LIMIT)
@@ -528,7 +535,7 @@ def EXTRACT_DATA(graph, model):
         docs = retrieve_documents(doc_retriever, messages)
                 
         if docs:
-            content = extract_from_documents(docs, llm, model)
+            content = extract_from_documents(docs, user_question, messages, llm, model)
         else:
             content = "I couldn't find any relevant documents to answer your question."
         

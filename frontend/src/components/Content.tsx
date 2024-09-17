@@ -200,11 +200,6 @@ const Content: React.FC<ContentProps> = ({
     }
   }, []);
 
-    if (selectedOption?.value) {
-      setModel(selectedOption?.value);
-    }
-  };*/
-
   const extractData = async (uid: string, isselectedRows = false, filesTobeProcess: CustomFile[]) => {
     if (!isselectedRows) {
       const fileItem = filesData.find((f) => f.id == uid);
