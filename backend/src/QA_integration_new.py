@@ -528,9 +528,9 @@ def EXTRACT_DATA(graph, model):
         user_question = HumanMessage(content="Where is Test Inc. located at and what are it's subsidiaries?")
         messages.append(user_question)
         
-        retrieval_query = VECTOR_GRAPH_SEARCH_QUERY.format(no_of_entites=VECTOR_GRAPH_SEARCH_ENTITY_LIMIT)
+        retrieval_query = VECTOR_SEARCH_QUERY
 
-        llm, doc_retriever, model_version = setup_extract(model, graph, "[]", retrieval_query, "graph + vector + fulltext")
+        llm, doc_retriever, model_version = setup_extract(model, graph, "[]", retrieval_query, "vector")
         
         docs = retrieve_documents(doc_retriever, messages)
                 
